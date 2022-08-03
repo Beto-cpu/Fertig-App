@@ -40,18 +40,52 @@ class AnalysisScreen(tk.Frame):
 	def __init__(self, container):
 		super().__init__(container)
 
+		def on_configure(event):
+			self.canvas.itemconfigure(self.content_container_id, width=event.width)
+			self.canvas.configure(scrollregion=self.canvas.bbox('all'))
+			self.canvas.yview_moveto(0)
+
 		# Define Styles #
 		self.style = ttk.Style(self)
 		self.style.configure('TLabel', background="white", font=('Roboto', 28))
 		self.style.configure('genericText.TLabel', background="white", font=('Roboto', 16))
 		self.config(background="white")
 
-		# Sub Container
-		self.content_container = tk.Frame(self, background="white")
-		ttk.Label(self.content_container, padding=(0, 30), text='Analysis', style="TLabel").pack()
-		self.content_container.pack(expand=True)
+		# Content
+		self.canvas = tk.Canvas(self, background="white")
+		self.canvas.pack(expand=True, fill="both", side="left")
+
+		self.scrollbar = tk.Scrollbar(self, command=self.canvas.yview)
+		self.scrollbar.pack(side="right", fill="y")
+		self.canvas.config(yscrollcommand=self.scrollbar.set)
+
+		self.content_container = tk.Frame(self.canvas, bg="white")
+		self.canvas.bind('<Configure>', on_configure)
+		self.content_container_id = self.canvas.create_window((0, 0), window=self.content_container, anchor='center')
+
+		# Title
+		ttk.Label(self.content_container, text='Analysis', style="TLabel").pack()
+
+		# Image
+		self.analysis_image = ImageTk.PhotoImage(Image.open('./assets/image_placeholder.jpg').resize((440, 300)))
+		self.analysis_image_label = tk.Label(self.content_container, image=self.analysis_image, width=440, height=300,
+											 background="white")
+		self.analysis_image_label.pack()
+		tkm.Button(self.content_container, text="Select image", fg="black",
+				   font=tk.font.Font(family='Roboto', size=12), command=self.update_image,
+				   background="white", borderless=1, bordercolor="black", activebackground="#2E86AB", padx=5,
+				   pady=3).pack()
+		ttk.Label(self.content_container, text="1").pack()
 
 		self.pack(side='right', expand=True, fill="both")
+
+	def update_image(self):
+		file = tk.filedialog.askopenfilename()
+		if file[-3:] != "jpg" and file[-3:] != "png" and file[-4:] != "jpeg":
+			tk.messagebox.showinfo(message="File must be an image (PNG, JPG or JPEG).", title="Error")
+			return
+		self.analysis_image = ImageTk.PhotoImage(Image.open(file).resize((440, 300)))
+		self.analysis_image_label.config(image=self.analysis_image)
 
 
 class HistoryScreen(tk.Frame):
@@ -175,7 +209,7 @@ class App(tk.Tk):
 		self.title('Fertig App')
 		self.geometry('300x50')
 		self.minsize(1164, 560)
-		# self.state('zoomed')
+	# self.state('zoomed')
 
 
 if __name__ == "__main__":
