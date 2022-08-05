@@ -6,6 +6,8 @@ from tkinter import ttk
 import tkmacosx as tkm
 import tkinter.filedialog
 from PIL import ImageTk, Image
+from image_classificator import ImageClassificator
+imageClassificator = ImageClassificator()
 
 
 class HomeScreen(tk.Frame):
@@ -48,7 +50,7 @@ class AnalysisScreen(tk.Frame):
 		# Define Styles #
 		self.style = ttk.Style(self)
 		self.style.configure('TLabel', background="white", font=('Roboto', 28))
-		self.style.configure('genericText.TLabel', background="white", font=('Roboto', 16))
+		self.style.configure('genericText.TLabel', background="white", font=('Roboto', 10))
 		self.config(background="white")
 
 		# Content
@@ -75,7 +77,8 @@ class AnalysisScreen(tk.Frame):
 				   font=tk.font.Font(family='Roboto', size=12), command=self.update_image,
 				   background="white", borderless=1, bordercolor="black", activebackground="#2E86AB", padx=5,
 				   pady=3).pack()
-		ttk.Label(self.content_container, text="1").pack()
+		self.result_label = ttk.Label(self.content_container, text="", style="genericText.TLabel")
+		self.result_label.pack()
 
 		self.pack(side='right', expand=True, fill="both")
 
@@ -84,8 +87,15 @@ class AnalysisScreen(tk.Frame):
 		if file[-3:] != "jpg" and file[-3:] != "png" and file[-4:] != "jpeg":
 			tk.messagebox.showinfo(message="File must be an image (PNG, JPG or JPEG).", title="Error")
 			return
-		self.analysis_image = ImageTk.PhotoImage(Image.open(file).resize((440, 300)))
+		image_file = Image.open(file)
+		self.analysis_image = ImageTk.PhotoImage(image_file.resize((440, 300)))
 		self.analysis_image_label.config(image=self.analysis_image)
+		category, percent = imageClassificator.analyze_image(image_file.resize((180, 180)))
+		self.result_label.config(text="This image most likely belongs to {category} with a {percent}% confidence."
+								 .format(category=category, percent=round(percent, 2)))
+
+
+		print()
 
 
 class HistoryScreen(tk.Frame):
