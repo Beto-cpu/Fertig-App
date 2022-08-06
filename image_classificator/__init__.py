@@ -9,7 +9,7 @@ class ImageClassificator:
 		script_location = Path(__file__).absolute().parent
 		file_location = script_location / 'my_model'
 		self.model = keras.models.load_model(file_location)
-		self.class_names = ['daisy', 'dandelion', 'roses', 'sunflowers', 'tulips']
+		self.class_names = ['glioma', 'meningioma', 'notumor', 'pituitary']
 
 	def analyze_image(self, image):
 		img_array = tf.keras.utils.img_to_array(image)
