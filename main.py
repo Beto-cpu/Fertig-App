@@ -8,7 +8,8 @@ import tkinter.filedialog
 from PIL import ImageTk, Image
 from image_classificator import ImageClassificator
 imageClassificator = ImageClassificator()
-
+from data_rw import DataRW
+dataRW = DataRW()
 
 class HomeScreen(tk.Frame):
 	def __init__(self, container):
@@ -39,6 +40,9 @@ class HomeScreen(tk.Frame):
 
 
 class AnalysisScreen(tk.Frame):
+	category = None
+	score = None
+
 	def __init__(self, container):
 		super().__init__(container)
 
@@ -69,7 +73,8 @@ class AnalysisScreen(tk.Frame):
 		ttk.Label(self.content_container, text='Analysis', style="TLabel").pack()
 
 		# Image
-		self.analysis_image = ImageTk.PhotoImage(Image.open('./assets/image_placeholder.jpg').resize((440, 300)))
+		self.image_file = Image.open('./assets/image_placeholder.jpg')
+		self.analysis_image = ImageTk.PhotoImage(self.image_file.resize((440, 300)))
 		self.analysis_image_label = tk.Label(self.content_container, image=self.analysis_image, width=440, height=300,
 											 background="white")
 		self.analysis_image_label.pack()
@@ -80,22 +85,29 @@ class AnalysisScreen(tk.Frame):
 		self.result_label = ttk.Label(self.content_container, text="", style="genericText.TLabel")
 		self.result_label.pack()
 
+		tkm.Button(self.content_container, text="Save", fg="black",
+				   font=tk.font.Font(family='Roboto', size=16), command=self.save_data,
+				   background="white", borderless=1, bordercolor="black", activebackground="#2E86AB", padx=5,
+				   pady=3).pack()
+
 		self.pack(side='right', expand=True, fill="both")
+
+	def save_data(self):
+		if self.category is None:
+			return
+		dataRW.add_data({"class": self.category, "score": self.score}, self.image_file)
 
 	def update_image(self):
 		file = tk.filedialog.askopenfilename()
 		if file[-3:] != "jpg" and file[-3:] != "png" and file[-4:] != "jpeg":
 			tk.messagebox.showinfo(message="File must be an image (PNG, JPG or JPEG).", title="Error")
 			return
-		image_file = Image.open(file)
-		self.analysis_image = ImageTk.PhotoImage(image_file.resize((440, 300)))
+		self.image_file = Image.open(file)
+		self.analysis_image = ImageTk.PhotoImage(self.image_file.resize((440, 300)))
 		self.analysis_image_label.config(image=self.analysis_image)
-		category, percent = imageClassificator.analyze_image(image_file.resize((180, 180)))
-		self.result_label.config(text="This image most likely belongs to {category} with a {percent}% confidence."
-								 .format(category=category, percent=round(percent, 2)))
-
-
-		print()
+		self.category, self.score = imageClassificator.analyze_image(self.image_file.resize((180, 180)))
+		self.result_label.config(text="Category: {category}. Score: {percent}% confidence."
+								 .format(category=self.category, percent=round(self.score, 2)))
 
 
 class HistoryScreen(tk.Frame):
