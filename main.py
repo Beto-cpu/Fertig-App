@@ -1,5 +1,5 @@
 import os
-
+from functools import partial
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tkinter as tk
 from tkinter import ttk
@@ -10,6 +10,7 @@ from image_classificator import ImageClassificator
 imageClassificator = ImageClassificator()
 from data_rw import DataRW
 dataRW = DataRW()
+
 
 class HomeScreen(tk.Frame):
 	def __init__(self, container):
@@ -45,6 +46,7 @@ class AnalysisScreen(tk.Frame):
 
 	def __init__(self, container):
 		super().__init__(container)
+		self.container = container
 
 		def on_configure(event):
 			self.canvas.itemconfigure(self.content_container_id, width=event.width)
@@ -87,15 +89,18 @@ class AnalysisScreen(tk.Frame):
 
 		tkm.Button(self.content_container, text="Save", fg="black",
 				   font=tk.font.Font(family='Roboto', size=16), command=self.save_data,
-				   background="white", borderless=1, bordercolor="black", activebackground="#2E86AB", padx=5,
+				   background="#39a9db", borderless=1, bordercolor="black", activebackground="#2E86AB", padx=5,
 				   pady=3).pack()
 
 		self.pack(side='right', expand=True, fill="both")
 
 	def save_data(self):
 		if self.category is None:
+			tk.messagebox.showinfo(message="You must select an image before saving the register.", title="Error")
 			return
 		dataRW.add_data({"class": self.category, "score": self.score}, self.image_file)
+		tk.messagebox.showinfo(message="Register saved successfully.", title="Success")
+		self.container.goto_history_screen()
 
 	def update_image(self):
 		file = tk.filedialog.askopenfilename()
@@ -113,19 +118,58 @@ class AnalysisScreen(tk.Frame):
 class HistoryScreen(tk.Frame):
 	def __init__(self, container):
 		super().__init__(container)
+		self.container = container
+
+		def on_configure(event):
+			self.canvas.itemconfigure(self.content_container_id, width=event.width)
+			self.canvas.configure(scrollregion=self.canvas.bbox('all'))
+			self.canvas.yview_moveto(0)
 
 		# Define Styles #
 		self.style = ttk.Style(self)
 		self.style.configure('TLabel', background="white", font=('Roboto', 28))
+		self.style.configure('table.TLabel', background="white", font=('Roboto', 14))
 		self.style.configure('genericText.TLabel', background="white", font=('Roboto', 16))
 		self.config(background="white")
 
-		# Sub Container
-		self.content_container = tk.Frame(self, background="white")
+		# Content
+		self.canvas = tk.Canvas(self, background="white")
+		self.canvas.pack(expand=True, fill="both", side="left")
+
+		self.scrollbar = tk.Scrollbar(self, command=self.canvas.yview)
+		self.scrollbar.pack(side="right", fill="y")
+		self.canvas.config(yscrollcommand=self.scrollbar.set)
+
+		self.content_container = tk.Frame(self.canvas, bg="white")
+		self.canvas.bind('<Configure>', on_configure)
+		self.content_container_id = self.canvas.create_window((0, 0), window=self.content_container, anchor='center')
 		ttk.Label(self.content_container, padding=(0, 30), text='History', style="TLabel").pack()
-		self.content_container.pack(expand=True)
+
+		# Table
+		self.table = tk.Frame(self.content_container, bg="white")
+		ttk.Label(self.table, padding=(0, 30), text='ID', style="table.TLabel").grid(column=0, row=0, padx=30)
+		ttk.Label(self.table, padding=(0, 30), text='Class', style="table.TLabel").grid(column=1, row=0, padx=30)
+		ttk.Label(self.table, padding=(0, 30), text='Score', style="table.TLabel").grid(column=2, row=0, padx=30)
+		ttk.Label(self.table, padding=(0, 30), text='Image', style="table.TLabel").grid(column=3, row=0, padx=30)
+
+		data = dataRW.get_data()
+		for index, row in data.iterrows():
+			ttk.Label(self.table, padding=(0, 30), text=str(index), style="table.TLabel").grid(column=0, row=index+1, padx=30)
+			ttk.Label(self.table, padding=(0, 30), text=str(row["class"]), style="table.TLabel").grid(column=1, row=index+1, padx=30)
+			ttk.Label(self.table, padding=(0, 30), text=str(round(row["score"], 2)), style="table.TLabel").grid(column=2, row=index+1, padx=30)
+			tkm.Button(self.table, text="View image", fg="black",
+					   font=tk.font.Font(family='Roboto', size=12), command=partial(self.open_image, row['fileRoute']),
+					   background="white", borderless=1, bordercolor="black", activebackground="#2E86AB", padx=3,
+					   pady=3).grid(column=3, row=index+1, padx=30)
+
+		self.table.pack()
 
 		self.pack(side='right', expand=True, fill="both")
+
+	@staticmethod
+	def open_image(path):
+		img = Image.open(path)
+		img.show()
 
 
 class DrawerNavigator(tk.Frame):
@@ -162,7 +206,7 @@ class DrawerNavigator(tk.Frame):
 
 		# Content #
 		self.currentScreen = HomeScreen(self)
-		# self.currentScreen = AnalysisScreen(self)
+		# self.currentScreen = HistoryScreen(self)
 
 		self.pack(expand=True, fill="both")
 

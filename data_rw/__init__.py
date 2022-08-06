@@ -25,7 +25,6 @@ class DataRW:
 		image.save(new_image_route)
 
 		self.data.loc[len(self.data.index)] = data
-		self.data.info()
 
 		self.data.to_csv(data_file_route)
 
