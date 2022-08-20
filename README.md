@@ -11,9 +11,9 @@
 <br>
 <img src="./assets/fertig_logo.png/" height="160"/>
 <br>
-This project consist in a desktop app for Tomographies Image Analysis. <br>
+This project consists in a desktop app for Tomographies Image Analysis. <br>
 
-This is the first approach to an medical app that is intended to help health workers make faster and more accurate diagnostics.
+This is the first approach to a medical app that is intended to help health workers make faster and more accurate diagnostics.
 
 ---
 
